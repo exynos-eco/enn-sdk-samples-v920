@@ -31,7 +31,7 @@ class CameraFragment : Fragment(), ModelExecutor.ExecutorListener {
     private lateinit var modelExecutor: ModelExecutor
     private lateinit var cameraExecutor: ExecutorService
     private lateinit var bitmapBuffer: Bitmap
-    private lateinit var detectedItems: List<Pair<TextView, TextView>>
+    private lateinit var detectedItems: List<TextView>
 
     private var camera: Camera? = null
     private var preview: Preview? = null
@@ -164,9 +164,9 @@ class CameraFragment : Fragment(), ModelExecutor.ExecutorListener {
         }
 
         detectedItems = listOf(
-            binding.processData.detectedItem0 to binding.processData.detectedItem0Score,
-            binding.processData.detectedItem1 to binding.processData.detectedItem1Score,
-            binding.processData.detectedItem2 to binding.processData.detectedItem2Score
+            binding.processData.detectedItem0,
+//            binding.processData.detectedItem1,
+//            binding.processData.detectedItem2
         )
 
         binding.viewFinder.scaleType = PreviewView.ScaleType.FIT_CENTER
@@ -197,14 +197,12 @@ class CameraFragment : Fragment(), ModelExecutor.ExecutorListener {
     }
 
     private fun updateUI(result: Map<String, Float>) {
-        detectedItems.forEachIndexed { index, pair ->
+        detectedItems.forEachIndexed { index, textView ->
             if (index < result.size) {
                 val key = result.keys.elementAt(index)
-                pair.first.text = key
-                pair.second.text = String.format("%.5f", result[key])
+                textView.text = key
             } else {
-                pair.first.text = ""
-                pair.second.text = ""
+                textView.text = ""
             }
         }
     }

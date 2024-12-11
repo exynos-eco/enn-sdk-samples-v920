@@ -3,6 +3,7 @@
 package com.samsung.poseestimation.fragments
 
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.ColorSpace
 import android.graphics.ImageDecoder
 import android.net.Uri
@@ -17,6 +18,7 @@ import com.samsung.poseestimation.data.Human
 import com.samsung.poseestimation.data.ModelConstants
 import com.samsung.poseestimation.databinding.FragmentImageBinding
 import com.samsung.poseestimation.executor.ModelExecutor
+import java.io.File
 
 
 class ImageFragment : Fragment(), ModelExecutor.ExecutorListener {
@@ -66,6 +68,7 @@ class ImageFragment : Fragment(), ModelExecutor.ExecutorListener {
     private fun setUI() {
         binding.buttonLoad.setOnClickListener {
             getContent.launch("image/*")
+//            loadImagesFromFilesystem()
         }
 
         binding.buttonProcess.isEnabled = false
@@ -79,6 +82,25 @@ class ImageFragment : Fragment(), ModelExecutor.ExecutorListener {
 
         binding.processData.buttonThresholdMinus.setOnClickListener {
             adjustThreshold(-0.1F)
+        }
+    }
+
+    private fun loadImagesFromFilesystem() {
+//        val filePath = "/data/local/tmp"
+        val filePath = "/sdcard/Pictures/"
+        val directory = File(filePath)
+        val images = directory.listFiles { file ->
+            file.isFile && (file.extension.equals("jpg", true) || file.extension.equals("png", true))
+        }
+
+        // Assuming you want to load the first image found
+        images?.firstOrNull()?.let { imageFile ->
+            val bitmap = BitmapFactory.decodeFile(imageFile.absolutePath)
+            binding.imageView.setImageBitmap(bitmap)
+            bitmapBuffer = bitmap // Store the bitmap for processing
+            binding.buttonProcess.isEnabled = true
+        } ?: run {
+            Log.e(TAG, "No images found in $filePath directory")
         }
     }
 
@@ -129,6 +151,7 @@ class ImageFragment : Fragment(), ModelExecutor.ExecutorListener {
         detectionResult: Human, inferenceTime: Long
     ) {
         activity?.runOnUiThread {
+            Log.i(TAG, "detectionResult : ${detectionResult.score}")
             if (detectionResult.score >= modelExecutor.threshold) {
                 binding.processData.inferenceTime.text = "$inferenceTime ms"
                 binding.overlay.setResults(detectionResult)

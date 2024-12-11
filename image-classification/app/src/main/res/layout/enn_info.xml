@@ -13,6 +13,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
+        android:gravity="center"
         android:paddingBottom="10dp">
 
         <TextView
@@ -20,60 +21,41 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textColor="@color/black"
+            android:textSize="40sp"
             tools:text="Apple" />
-
-        <TextView
-            android:id="@+id/detected_item0_score"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textAlignment="textEnd"
-            android:textColor="@color/black"
-            tools:text="0.001" />
     </LinearLayout>
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:paddingBottom="10dp">
+<!--    <LinearLayout-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:orientation="horizontal"-->
+<!--        android:gravity="center"-->
+<!--        android:paddingBottom="10dp">-->
 
-        <TextView
-            android:id="@+id/detected_item1"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="@color/black"
-            tools:text="Banana" />
+<!--        <TextView-->
+<!--            android:id="@+id/detected_item1"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:textColor="@color/black"-->
+<!--            android:textSize="40sp"-->
+<!--            tools:text="Banana" />-->
+<!--    </LinearLayout>-->
 
-        <TextView
-            android:id="@+id/detected_item1_score"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textAlignment="textEnd"
-            android:textColor="@color/black"
-            tools:text="0.001" />
-    </LinearLayout>
+<!--    <LinearLayout-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:orientation="horizontal"-->
+<!--        android:gravity="center"-->
+<!--        android:paddingBottom="10dp">-->
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:paddingBottom="10dp">
-
-        <TextView
-            android:id="@+id/detected_item2"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="@color/black"
-            tools:text="Strawberry" />
-
-        <TextView
-            android:id="@+id/detected_item2_score"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textAlignment="textEnd"
-            android:textColor="@color/black"
-            tools:text="0.001" />
-    </LinearLayout>
+<!--        <TextView-->
+<!--            android:id="@+id/detected_item2"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:textColor="@color/black"-->
+<!--            android:textSize="40sp"-->
+<!--            tools:text="Strawberry" />-->
+<!--    </LinearLayout>-->
 
     <View
         android:layout_width="match_parent"

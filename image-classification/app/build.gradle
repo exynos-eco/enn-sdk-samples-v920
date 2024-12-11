@@ -1,3 +1,9 @@
+buildscript {
+    dependencies {
+        classpath "com.android.tools.build:gradle:8.5.0" // Update to a newer version
+    }
+}
+
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
@@ -5,12 +11,12 @@ plugins {
 
 android {
     namespace 'com.samsung.imageclassification'
-    compileSdk 33
+    compileSdk 34
 
     defaultConfig {
         applicationId "com.samsung.imageclassification"
         minSdk 29
-        targetSdk 33
+        targetSdk 34
         versionCode 1
         versionName "1.0"
 
@@ -66,6 +72,9 @@ dependencies {
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+
+    implementation 'androidx.media3:media3-exoplayer:1.0.0' // Check for the latest version
+    implementation 'androidx.media3:media3-ui:1.0.0' // Check for the latest version
 
     // Navigation library
     def nav_version = "2.5.3"

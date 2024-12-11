@@ -5,6 +5,7 @@ package com.samsung.imageclassification.executor
 import android.content.Context
 import android.graphics.Bitmap
 import android.os.SystemClock
+import android.util.Log
 import com.samsung.imageclassification.data.DataType
 import com.samsung.imageclassification.data.LayerType
 import com.samsung.imageclassification.data.ModelConstants
@@ -19,7 +20,7 @@ import java.nio.ByteOrder
 @Suppress("IMPLICIT_CAST_TO_ANY")
 @OptIn(ExperimentalUnsignedTypes::class)
 class ModelExecutor(
-    var threshold: Float = 0.5F,
+    var threshold: Float = 4.0F,
     val context: Context,
     val executorListener: ExecutorListener?
 ) {
@@ -72,6 +73,8 @@ class ModelExecutor(
         inferenceTime = SystemClock.uptimeMillis() - inferenceTime
         // Copy Output Data
         val output = ennMemcpyDeviceToHost(bufferSet, nInBuffer)
+        Log.i("ModelExecutor process", output.size.toString())
+        Log.i("ModelExecutor process", output[0].toString())
 
         executorListener?.onResults(
             postProcess(output), inferenceTime
@@ -113,6 +116,7 @@ class ModelExecutor(
         val output = when (OUTPUT_DATA_TYPE) {
             DataType.UINT8 -> {
                 modelOutput.asUByteArray().mapIndexed { index, value ->
+//                    Log.i("ModelExecutor process", value.toInt().toString())
                     labelList[index] to dequantizedValues[((value.toInt()
                             - OUTPUT_CONVERSION_OFFSET)
                             / OUTPUT_CONVERSION_SCALE).toInt()]
@@ -121,12 +125,15 @@ class ModelExecutor(
 
             DataType.FLOAT32 -> {
                 val byteBuffer = ByteBuffer.wrap(modelOutput).order(ByteOrder.nativeOrder())
+                Log.i("ModelExecutor ByteBuffer", byteBuffer[0].toString())
                 val floatBuffer = byteBuffer.asFloatBuffer()
+                Log.i("ModelExecutor FloatBuffer", floatBuffer[0].toString())
                 val data = FloatArray(floatBuffer.remaining())
+                Log.i("ModelExecutor data", "${data.toList().sortedDescending().take(5)}")
 
                 floatBuffer.get(data)
                 data.mapIndexed { index, value ->
-                    labelList[index] to ((value
+                    labelList[index] to ((value * 2.0F
                             - OUTPUT_CONVERSION_OFFSET)
                             / OUTPUT_CONVERSION_SCALE)
                 }.filter { it.second >= threshold }.sortedByDescending { it.second }.toMap()
@@ -137,7 +144,33 @@ class ModelExecutor(
             }
         }
 
-        return output
+        Log.i("ModelExecutor postProcess", output.size.toString())
+        Log.i("ModelExecutor process", output.toString())
+
+        return softmax(getTopNEntries(output, 5))
+    }
+
+    private fun getTopNEntries(inputMap: Map<String, Float>, n: Int): Map<String, Float> {
+        // Step 1: Sort the map entries by value in descending order and take the top N entries
+        return inputMap.entries
+            .sortedByDescending { it.value } // Sort by value
+            .take(n) // Take the top N entries
+            .associate { it.toPair() } // Convert to Map<String, Float>
+    }
+
+    private fun softmax(inputMap: Map<String, Float>): Map<String, Float> {
+        // Step 1: Calculate the exponentials of the values
+        val expMap = inputMap.mapValues { Math.exp(it.value.toDouble()).toFloat() }
+
+        // Step 2: Sum the exponentials
+        val sumExp = expMap.values.sum()
+
+        // Step 3: Calculate the softmax probabilities
+        val softmaxMap = expMap.mapValues { it.value / sumExp }
+
+        Log.i("ModelExecutor softmax", softmaxMap.toString())
+
+        return softmaxMap
     }
 
     private fun convertBitmapToUByteArray(
@@ -189,6 +222,8 @@ class ModelExecutor(
     ): FloatArray {
         val totalPixels = INPUT_SIZE_H * INPUT_SIZE_W
         val pixels = IntArray(totalPixels)
+        val meanVec = floatArrayOf(0.485f, 0.456f, 0.406f)
+        val stddevVec = floatArrayOf(0.229f, 0.224f, 0.225f)
 
         image.getPixels(
             pixels,
@@ -214,15 +249,21 @@ class ModelExecutor(
 
         for (i in 0 until totalPixels) {
             val color = pixels[i]
-            floatArray[i * stride + offset[0]] = ((((color shr 16) and 0xFF)
-                    - INPUT_CONVERSION_OFFSET)
-                    / INPUT_CONVERSION_SCALE)
-            floatArray[i * stride + offset[1]] = ((((color shr 8) and 0xFF)
-                    - INPUT_CONVERSION_OFFSET)
-                    / INPUT_CONVERSION_SCALE)
-            floatArray[i * stride + offset[2]] = ((((color shr 0) and 0xFF)
-                    - INPUT_CONVERSION_OFFSET)
-                    / INPUT_CONVERSION_SCALE)
+            floatArray[i * stride + offset[0]] = ((((color shr 16) and 0xFF)/255.0F
+//                    - INPUT_CONVERSION_OFFSET)
+//                    / INPUT_CONVERSION_SCALE)
+                    - meanVec[0])
+                    / stddevVec[0])
+            floatArray[i * stride + offset[1]] = ((((color shr 8) and 0xFF)/255.0F
+//                    - INPUT_CONVERSION_OFFSET)
+//                    / INPUT_CONVERSION_SCALE)
+                    - meanVec[1])
+                    / stddevVec[1])
+            floatArray[i * stride + offset[2]] = ((((color shr 0) and 0xFF)/255.0F
+//                    - INPUT_CONVERSION_OFFSET)
+//                    / INPUT_CONVERSION_SCALE)
+                    - meanVec[2])
+                    / stddevVec[2])
         }
 
         return floatArray

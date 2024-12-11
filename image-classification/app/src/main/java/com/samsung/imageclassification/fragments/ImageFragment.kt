@@ -3,6 +3,7 @@
 package com.samsung.imageclassification.fragments
 
 import android.graphics.Bitmap
+import android.graphics.Color
 import android.graphics.ColorSpace
 import android.graphics.ImageDecoder
 import android.net.Uri
@@ -17,13 +18,17 @@ import androidx.fragment.app.Fragment
 import com.samsung.imageclassification.data.ModelConstants
 import com.samsung.imageclassification.databinding.FragmentImageBinding
 import com.samsung.imageclassification.executor.ModelExecutor
+import kotlin.math.min
+import kotlin.math.roundToInt
 
 
 class ImageFragment : Fragment(), ModelExecutor.ExecutorListener {
     private lateinit var binding: FragmentImageBinding
     private lateinit var bitmapBuffer: Bitmap
     private lateinit var modelExecutor: ModelExecutor
-    private lateinit var detectedItems: List<Pair<TextView, TextView>>
+    private lateinit var detectedItems: List<TextView>
+    private val TARGET_SIZE = 256
+    private val CROP_SIZE = 224
 
     private val getContent =
         registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
@@ -83,9 +88,9 @@ class ImageFragment : Fragment(), ModelExecutor.ExecutorListener {
         }
 
         detectedItems = listOf(
-            binding.processData.detectedItem0 to binding.processData.detectedItem0Score,
-            binding.processData.detectedItem1 to binding.processData.detectedItem1Score,
-            binding.processData.detectedItem2 to binding.processData.detectedItem2Score
+            binding.processData.detectedItem0,
+//            binding.processData.detectedItem1,
+//            binding.processData.detectedItem2
         )
     }
 
@@ -94,30 +99,35 @@ class ImageFragment : Fragment(), ModelExecutor.ExecutorListener {
     }
 
     private fun processImage(bitmap: Bitmap): Bitmap {
-        val (scaledWidth, scaledHeight) = calculateScaleSize(
-            bitmap.width, bitmap.height
-        )
-        val scaledBitmap = Bitmap.createScaledBitmap(
-            bitmap, scaledWidth, scaledHeight, true
-        )
-        val (x, y) = calculateCenterCropPosition(scaledBitmap)
+        // Step 1: Resize the image while maintaining aspect ratio
+        val resizedBitmap = resizeImage(bitmap, TARGET_SIZE)
 
-        return Bitmap.createBitmap(scaledBitmap, x, y, INPUT_SIZE_W, INPUT_SIZE_H)
+        Log.i(TAG, "resized image : ${resizedBitmap.width} x ${resizedBitmap.height}")
+
+        // Step 2: Center crop the image to 224x224
+        val cropedBitmap = centerCrop(resizedBitmap, CROP_SIZE, CROP_SIZE)
+
+        return cropedBitmap
     }
 
-    private fun calculateScaleSize(bitmapWidth: Int, bitmapHeight: Int): Pair<Int, Int> {
-        val scaleFactor = maxOf(
-            INPUT_SIZE_W.toFloat() / bitmapWidth, INPUT_SIZE_H.toFloat() / bitmapHeight
-        )
-
-        return Pair((bitmapWidth * scaleFactor).toInt(), (bitmapHeight * scaleFactor).toInt())
+    private fun resizeImage(bitmap: Bitmap, minLen: Int): Bitmap {
+        val ratio = minLen.toFloat() / min(bitmap.width, bitmap.height)
+        val newWidth: Int
+        val newHeight: Int
+        if (bitmap.width > bitmap.height) {
+            newWidth = (ratio * bitmap.width).roundToInt()
+            newHeight = minLen
+        } else {
+            newWidth = minLen
+            newHeight = (ratio * bitmap.height).roundToInt()
+        }
+        return Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true)
     }
 
-    private fun calculateCenterCropPosition(scaledBitmap: Bitmap): Pair<Int, Int> {
-        return Pair(
-            (scaledBitmap.width - INPUT_SIZE_W) / 2,
-            (scaledBitmap.height - INPUT_SIZE_H) / 2
-        )
+    private fun centerCrop(bitmap: Bitmap, cropW: Int, cropH: Int): Bitmap {
+        val startX = (bitmap.width - cropW) / 2
+        val startY = (bitmap.height - cropH) / 2
+        return Bitmap.createBitmap(bitmap, startX, startY, cropW, cropH)
     }
 
     private fun adjustThreshold(delta: Float) {
@@ -142,14 +152,12 @@ class ImageFragment : Fragment(), ModelExecutor.ExecutorListener {
     }
 
     private fun updateUI(result: Map<String, Float>) {
-        detectedItems.forEachIndexed { index, pair ->
+        detectedItems.forEachIndexed { index, textView ->
             if (index < result.size) {
                 val key = result.keys.elementAt(index)
-                pair.first.text = key
-                pair.second.text = String.format("%.5f", result[key])
+                textView.text = key
             } else {
-                pair.first.text = ""
-                pair.second.text = ""
+                textView.text = ""
             }
         }
     }

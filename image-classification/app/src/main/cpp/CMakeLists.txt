@@ -19,7 +19,7 @@ add_library(
 set_target_properties(
         enn_service_so
         PROPERTIES IMPORTED_LOCATION
-        ${CMAKE_SOURCE_DIR}/../jniLibs/${ANDROID_ABI}/libenn_public_api_ndk_v1.so
+        ${CMAKE_SOURCE_DIR}/../jniLibs/${ANDROID_ABI}/libenn_public_api_cpp.so
 )
 
 find_library(
