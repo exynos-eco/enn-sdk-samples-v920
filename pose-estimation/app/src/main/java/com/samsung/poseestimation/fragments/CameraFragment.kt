@@ -22,6 +22,7 @@ import com.samsung.poseestimation.data.Human
 import com.samsung.poseestimation.data.ModelConstants
 import com.samsung.poseestimation.databinding.FragmentCameraBinding
 import com.samsung.poseestimation.executor.ModelExecutor
+import com.samsung.poseestimation.fragments.VideoFragment.Companion
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -104,6 +105,7 @@ class CameraFragment : Fragment(), ModelExecutor.ExecutorListener {
             .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888) // Set the output image format to RGBA_8888
             .build().also {
                 it.setAnalyzer(cameraExecutor) { image -> // Set the analyzer to run on the previously created executor
+                    Log.i(TAG, image.toString())
                     if (!::bitmapBuffer.isInitialized) { // If the bitmapBuffer is not initialized
                         // Create a new bitmap with the same dimensions as the image
                         bitmapBuffer = Bitmap.createBitmap(

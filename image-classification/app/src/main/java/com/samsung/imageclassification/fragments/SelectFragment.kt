@@ -47,6 +47,10 @@ class SelectFragment : Fragment() {
         binding.imageButton.setOnClickListener {
             view.findNavController().navigate(R.id.action_selectFragment_to_imageFragment)
         }
+
+        binding.videoButton.setOnClickListener {
+            view.findNavController().navigate(R.id.action_selectFragment_to_videoFragment)
+        }
     }
 
     private fun cameraPermissionGranted() = ContextCompat.checkSelfPermission(

@@ -6,6 +6,7 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.util.AttributeSet
+import android.util.Log
 import android.view.View
 import androidx.core.content.ContextCompat
 import com.samsung.poseestimation.data.Human
@@ -24,6 +25,7 @@ class OverlayView(
 
     private var scale = 1F
     private var offset = 0F
+    private var offsetX = 0F
 
     init {
         initPaints()
@@ -46,7 +48,7 @@ class OverlayView(
     fun setResults(human: Human) {
         result = human
         scale = min(width.toFloat(), height.toFloat()) / 257
-        offset = (max(width.toFloat(), height.toFloat()) - min(width.toFloat(), height.toFloat())) / 2 + 0
+        offsetX = (max(width.toFloat(), height.toFloat()) - min(width.toFloat(), height.toFloat())) / 2 + 0
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -55,14 +57,14 @@ class OverlayView(
         result?.let { human ->
             human.points.forEach {
                 canvas.drawPoint(
-                    it.coordinate.x * scale, it.coordinate.y * scale + offset, pointPaint
+                    it.coordinate.x * scale + offsetX, it.coordinate.y * scale + offset, pointPaint
                 )
             }
             human.edges.forEach {
                 canvas.drawLine(
-                    it.first.coordinate.x * scale,
+                    it.first.coordinate.x * scale + offsetX,
                     it.first.coordinate.y * scale + offset,
-                    it.second.coordinate.x * scale,
+                    it.second.coordinate.x * scale + offsetX,
                     it.second.coordinate.y * scale + offset,
                     edgePaint
                 )

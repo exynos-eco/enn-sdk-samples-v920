@@ -14,6 +14,9 @@
         <action
             android:id="@+id/action_selectFragment_to_imageFragment"
             app:destination="@id/imageFragment" />
+        <action
+            android:id="@+id/action_selectFragment_to_videoFragment"
+            app:destination="@id/videoFragment" />
     </fragment>
     <fragment
         android:id="@+id/cameraFragment"
@@ -23,4 +26,8 @@
         android:id="@+id/imageFragment"
         android:name="com.samsung.poseestimation.fragments.ImageFragment"
         android:label="ImageFragment" />
+    <fragment
+        android:id="@+id/videoFragment"
+        android:name="com.samsung.poseestimation.fragments.VideoFragment"
+        android:label="VideoFragment" />
 </navigation>
