@@ -3,10 +3,9 @@
 package com.samsung.imageclassification.data
 
 object ModelConstants {
-    const val MODEL_NAME = "mobilenetv2_O2_SingleCore.nnc"
+    const val MODEL_NAME = "mobilenetv2-7_simplify_O2_SingleCore.nnc"
 
     val INPUT_DATA_TYPE = DataType.FLOAT32
-//    val INPUT_DATA_LAYER = LayerType.HWC
     val INPUT_DATA_LAYER = LayerType.CHW
 
     const val INPUT_SIZE_W = 224
@@ -14,7 +13,6 @@ object ModelConstants {
     const val INPUT_SIZE_C = 3
 
     const val INPUT_CONVERSION_SCALE = 255F
-//    const val INPUT_CONVERSION_SCALE = 1F
     const val INPUT_CONVERSION_OFFSET = 0F
 
     val OUTPUT_DATA_TYPE = DataType.FLOAT32

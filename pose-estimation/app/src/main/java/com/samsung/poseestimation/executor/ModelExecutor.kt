@@ -76,8 +76,8 @@ class ModelExecutor(
         ennExecute(modelId)
         inferenceTime = SystemClock.uptimeMillis() - inferenceTime
         // Copy Output Data
-        val heatmapModelOutput = ennMemcpyDeviceToHost(bufferSet, 3)
-        val offsetModelOutput = ennMemcpyDeviceToHost(bufferSet, 4)
+        val heatmapModelOutput = ennMemcpyDeviceToHost(bufferSet, 1)
+        val offsetModelOutput = ennMemcpyDeviceToHost(bufferSet, 2)
 
         executorListener?.onResults(
             postProcess(heatmapModelOutput, offsetModelOutput), inferenceTime
@@ -133,14 +133,15 @@ class ModelExecutor(
     private fun postProcessModelOutputs(
         heatmaps: Array<Array<FloatArray>>, offsets: Array<Array<FloatArray>>
     ): Array<FloatArray> {
-        val numKeypoints = heatmaps[0][0].size
+        val numKeypoints = heatmaps.size
         val keypointPositions = Array(numKeypoints) { findMaxInHeatmap(heatmaps, it) }
-        val (yCoords, xCoords, confidenceScores) = computeCoordinatesAndConfidence(
+
+        val (xCoords, yCoords, confidenceScores) = computeCoordinatesAndConfidence(
             keypointPositions, offsets, heatmaps
         )
 
         return enumValues<BodyPart>().mapIndexed { idx, _ ->
-            floatArrayOf(xCoords[idx].toFloat(), yCoords[idx].toFloat(), confidenceScores[idx])
+            floatArrayOf(xCoords[idx], yCoords[idx], confidenceScores[idx])
         }.toTypedArray()
     }
 
@@ -159,35 +160,36 @@ class ModelExecutor(
         keypointPositions: Array<Pair<Int, Int>>,
         offsets: Array<Array<FloatArray>>,
         heatmaps: Array<Array<FloatArray>>
-    ): Triple<IntArray, IntArray, FloatArray> {
-        val height = heatmaps.size
-        val width = heatmaps[0].size
+    ): Triple<FloatArray, FloatArray, FloatArray> {
+        val height = heatmaps[0].size
+        val width = heatmaps.size
         val numKeypoints = heatmaps[0][0].size
-        val yCoords = IntArray(numKeypoints)
-        val xCoords = IntArray(numKeypoints)
+        val xCoords = FloatArray(numKeypoints)
+        val yCoords = FloatArray(numKeypoints)
         val confidenceScores = FloatArray(numKeypoints)
 
         val cropDimensions = computeCropDimensions(INPUT_SIZE_W, INPUT_SIZE_H)
 
-        keypointPositions.forEachIndexed { idx,  (y, x) ->
-            yCoords[idx] = computeCoordinate(
-                axisPosition = y,
-                axisLength = height,
-                imageSize = INPUT_SIZE_H,
-                offset = offsets[y][x][idx],
-                cropDimension = cropDimensions.first
-            )
+        keypointPositions.forEachIndexed { idx, (x, y) ->
             xCoords[idx] = computeCoordinate(
                 axisPosition = x,
                 axisLength = width,
                 imageSize = INPUT_SIZE_W,
-                offset = offsets[y][x][idx + numKeypoints],
+                offset = offsets[x][y][idx + numKeypoints],  //  x-offset is  (idx + 17)
                 cropDimension = cropDimensions.second
             )
-            confidenceScores[idx] = sigmoid(heatmaps[y][x][idx])
+            yCoords[idx] = computeCoordinate(
+                axisPosition = y,
+                axisLength = height,
+                imageSize = INPUT_SIZE_H,
+                offset = offsets[x][y][idx],  //  y-offset is idx
+                cropDimension = cropDimensions.first
+            )
+
+            confidenceScores[idx] = sigmoid(heatmaps[x][y][idx])
         }
 
-        return Triple(yCoords, xCoords, confidenceScores)
+        return Triple(xCoords, yCoords, confidenceScores)
     }
 
     private fun computeCropDimensions(width: Int, height: Int): Pair<Float, Float> {
@@ -197,15 +199,14 @@ class ModelExecutor(
     }
 
     private fun computeCoordinate(
-        axisPosition: Int,
-        axisLength: Int,
-        imageSize: Int,
+        axisPosition: Int, // heatmap grid value
+        axisLength: Int, // heatmap grid size
+        imageSize: Int, // image size //
         offset: Float,
         cropDimension: Float
-    ): Int {
-        val scale = max(INPUT_SIZE_W, INPUT_SIZE_H).toFloat()
-        val coordinate = axisPosition / (axisLength - 1).toFloat() * imageSize + offset
-        return ((coordinate * scale / imageSize) - cropDimension / 2).toInt()
+    ): Float {
+        return (axisPosition + 0.5f) / (axisLength).toFloat() * imageSize + offset
+
     }
 
     private fun convertBitmapToUByteArray(
@@ -301,10 +302,10 @@ class ModelExecutor(
     ): Array<Array<FloatArray>> {
         val output = convertOutputByteToFloatArray(modelOutput, dataType)
 
-        return Array(shapeArray[0]) { i ->
-            Array(shapeArray[1]) { j ->
-                FloatArray(shapeArray[2]) { k ->
-                    output[(i * shapeArray[1] * shapeArray[2]) + (j * shapeArray[2]) + k]
+        return Array(shapeArray[0]) { w ->
+            Array(shapeArray[1]) { h ->
+                FloatArray(shapeArray[2]) { c ->
+                    output[c * (shapeArray[1] * shapeArray[0]) + h * shapeArray[0] + w]
                 }
             }
         }
@@ -323,7 +324,6 @@ class ModelExecutor(
                 val byteBuffer = ByteBuffer.wrap(modelOutput).order(ByteOrder.nativeOrder())
                 val floatBuffer = byteBuffer.asFloatBuffer()
                 val floatArray = FloatArray(floatBuffer.remaining())
-
                 floatBuffer.get(floatArray)
                 floatArray
             }
