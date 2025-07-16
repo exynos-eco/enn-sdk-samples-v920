@@ -15,9 +15,8 @@ set(ANDROID_STL "gnustl_shared")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/build/bin)
 
 # OpenCV
-set(OpenCV_DIR "/opt/opencv-arm-4.1.0/lib/cmake/opencv4")
-find_package(OpenCV REQUIRED)
-include_directories(${OpenCV_INCLUDE_DIRS})
+set(OPENCV_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/opencv")
+include_directories(${OPENCV_ROOT}/include)
 
 # GStreamer
 find_package(PkgConfig REQUIRED)
@@ -34,4 +33,5 @@ set(PROJECT_SOURCES
 add_executable(${target_name} ${PROJECT_SOURCES})
 
 target_link_libraries(${target_name} enn_public_api_cpp_ enn_user enn_engine cutils dmabufheap enn_common_utils
-                       enn_model enn_user_driver_cpu enn_user_driver_unified enn_jsoncpp ion ${OpenCV_LIBS} ${GST_LIBRARIES})
+                       enn_model enn_user_driver_cpu enn_user_driver_unified enn_jsoncpp ion ${GST_LIBRARIES} 
+                       ${OPENCV_ROOT}/libopencv_core.so.4.1 ${OPENCV_ROOT}/libopencv_imgcodecs.so.4.1 ${OPENCV_ROOT}/libopencv_imgproc.so.4.1 ${OPENCV_ROOT}/libopencv_videoio.so.4.1)
